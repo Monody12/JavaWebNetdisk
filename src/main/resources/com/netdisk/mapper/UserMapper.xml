@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.netdisk.mapper.UserMapper">
+
+    <select id="findUserByUsername" parameterType="com.netdisk.entity.User" resultType="com.netdisk.entity.User">
+        select * from users where username = #{username}
+    </select>
+
+    <update id="updateUserById" parameterType="com.netdisk.entity.User">
+        update users
+        <set>
+            <if test="nickname != null and nickname!= ''">
+                `nickname` = #{nickname},
+            </if>
+            <if test="password != null and password!= ''">
+                `password` = #{password},
+            </if>
+            <if test="token != null">
+                `token` = #{token},
+            </if>
+            <if test="level != 0">
+                `level` = #{level},
+            </if>
+            <if test="capacity != 0">
+                `capacity` = #{capacity},
+            </if>
+        </set>
+        where `username` = #{username}
+    </update>
+
+    <insert id="insertUserInfo" parameterType="com.netdisk.entity.User">
+        insert users (`id`,`username`,`nickname`,`password`,`capacity`,`level`,`token`)
+        values (#{id},#{username},#{nickname},#{password},#{capacity},#{level},#{token})
+    </insert>
+
+    <select id="findUsers" parameterType="com.netdisk.entity.User" resultType="com.netdisk.entity.User">
+        select * from users where `level` &lt; #{level}
+    </select>
+
+</mapper>

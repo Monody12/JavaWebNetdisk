@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <!--禁用缓存-->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+
+    <title>我的个人网盘</title>
+    <link rel="icon" href="img/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="css/elementUI.css"/>
+    <script src="js/vue.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/axios.min.js" type="text/javascript"></script>
+    <script src="js/elementUI.js" type="text/javascript"></script>
+    <style lang="scss" scoped>
+        .table-wrapper {
+            height: calc(100% - 60px);
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <hgroup>
+        <h1>{{nickname}}的个人网盘</h1>
+    </hgroup>
+    <el-button @click="uploadFile()">上传文件</el-button>
+    <el-button @click="getInfo()">更新我的文件信息</el-button>
+    <el-button @click="getPublicInfo()">查找公开的文件</el-button>
+    <el-button @click="editPersonalize()">个性化设置</el-button>
+    <el-button @click="editUserInfo()">编辑个人信息</el-button>
+    <el-button @click="logoutConfirm()">注销</el-button>
+
+    <p>我的文件</p>
+    <div class="table-wrapper" ref="tableWrapper">
+        <el-table
+                :data="tableData.filter(data => !search || data.name.toLowerCase().includes(search.toLowerCase()) || data.username.toLowerCase().includes(search.toLowerCase())
+            || data.detail.toLowerCase().includes(search.toLowerCase())  ||data.type.toLowerCase().includes(search.toLowerCase()))"
+                ref="multipleTable"
+                :data="tableData"
+                tooltip-effect="dark"
+                style="width: 100%"
+                @selection-change="handleSelectionChange"
+                :height=tableH
+        >
+            <el-table-column
+                    type="selection"
+                    width="55">
+            </el-table-column>
+
+            <el-table-column
+                    prop="username"
+                    label="所有者"
+                    width="100">
+            </el-table-column>
+            <el-table-column
+                    prop="name"
+                    label="文件名"
+                    sortable
+                    width="300">
+            </el-table-column>
+            <el-table-column
+                    prop="type"
+                    label="文件类型"
+                    sortable
+                    width="120">
+            </el-table-column>
+            <el-table-column
+                    prop="detail"
+                    label="文件描述"
+                    sortable
+                    width="150">
+            </el-table-column>
+            <el-table-column
+                    prop="size"
+                    label="文件大小"
+                    sortable
+                    width="120">
+                <template slot-scope="scope">{{ scope.row.size }}</template>
+            </el-table-column>
+            <el-table-column
+                    fixed="right"
+                    prop="path"
+                    label="下载链接"
+                    width="120">
+                <template slot-scope="scope">
+                    <el-link :href="scope.row.path" :download="scope.row.name" target="_blank" type="primary">点击下载
+                    </el-link>
+                </template>
+            </el-table-column>
+
+            <el-table-column
+                    prop="time"
+                    label="上传时间"
+                    sortable
+                    width="180">
+
+                <template slot-scope="scope">{{ scope.row.date }} &nbsp;{{ scope.row.time }}</template>
+            </el-table-column>
+            <el-table-column
+                    prop="isPublic"
+                    sortable
+                    label="公开性">
+                <template slot-scope="scope">{{ scope.row.public?"是":"否" }}</template>
+            </el-table-column>
+            user
+
+            <el-table-column
+                    fixed="right"
+                    label="操作"
+            >
+                <template slot-scope="scope">
+                    <el-button type="text" @click="editFileInfo(scope.$index, scope.row)">编辑文件信息</el-button>
+                </template>
+            </el-table-column>
+
+            <el-table-column
+                    align="right">
+                <template slot="header" slot-scope="scope">
+                    <el-input
+                            v-model="search"
+                            size="mini"
+                            placeholder="输入关键字搜索"/>
+                </template>
+            </el-table-column>
+
+        </el-table>
+    </div>
+
+
+    <div style="margin-top: 20px">
+        <template>
+            <el-button @click="deleteFilesConfirm()">删除选中文件</el-button>
+        </template>
+    </div>
+
+
+    <el-dialog title="编辑文件信息" :visible.sync="dialogFormVisible">
+        <el-form :model="form2">
+            <el-form-item label="文件描述" :label-width="formLabelWidth">
+                <el-input v-model="form2.detail" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="文件公开性" :label-width="formLabelWidth">
+                <el-checkbox v-model="form2.isPublic">{{form2.isPublic?"与他人分享此文件":"只有我能查看"}}</el-checkbox>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="dialogFormVisible = false">取 消</el-button>
+            <el-button type="primary" @click="updateFileInfo()">确 定</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 用户信息修改弹窗-->
+    <el-dialog title="编辑用户信息" :visible.sync="dialogFormVisible2">
+        <el-form :model="form3" autocomplete="off">
+            <el-form-item label="用户名" :label-width="formLabelWidth2">
+                <el-input v-model="username" autocomplete="off" :disabled="true"></el-input>
+            </el-form-item>
+            <el-form-item label="昵称" :label-width="formLabelWidth2">
+                <el-input v-model="form3.nickname" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="原密码" :label-width="formLabelWidth2">
+                <el-input placeholder="如需更改密码，请在此输入原密码" v-model="form3.old_password" show-password
+                          autocomplete="new-password"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" :label-width="formLabelWidth2">
+                <el-input placeholder="如需更改密码，请在此输入新密码" v-model="form3.password" show-password
+                          autocomplete="new-password"></el-input>
+            </el-form-item>
+            <el-form-item label="确认密码" :label-width="formLabelWidth2">
+                <el-input placeholder="再输入一次新密码以确认更改" v-model="form3.confirm_password" show-password
+                          autocomplete="new-password"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="dialogFormVisible2 = false">取 消</el-button>
+            <el-button type="primary" @click="updateUserInfo()">确 定</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 个性化设置修改弹窗-->
+    <el-dialog title="个性化设置（仅本地生效）" :visible.sync="dialogFormVisible3">
+        <el-form :model="Personalize" autocomplete="off">
+
+            <el-form-item label="文件信息显示" :label-width="formLabelWidth3">
+                <el-select v-model="Personalize.descending" placeholder="请选择">
+                    <el-option
+                            v-for="item in fileOrderOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                    >
+                    </el-option>
+                </el-select>
+            </el-form-item>
+
+            <el-form-item label="上传文件默认公开" :label-width="formLabelWidth3">
+                <el-select v-model="Personalize.onPublic" placeholder="请选择">
+                    <el-option
+                            v-for="item in defaultOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                    >
+                    </el-option>
+                </el-select>
+            </el-form-item>
+
+            <el-form-item label="上传时默认覆盖文件" :label-width="formLabelWidth3">
+                <el-select v-model="Personalize.onOverwrite" placeholder="请选择">
+                    <el-option
+                            v-for="item in defaultOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                    >
+                    </el-option>
+                </el-select>
+            </el-form-item>
+
+
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="dialogFormVisible3 = false">取 消</el-button>
+            <el-button type="primary" @click="editPersonalize(true)">确 定</el-button>
+        </div>
+    </el-dialog>
+
+</div>
+</body>
+<script>
+    new Vue({
+        //作用域
+        el: '#app',
+
+        //初始化数据
+        data: {
+            tableH: 0, //文件表单高度
+
+            username: "",
+            nickname: "",
+            password: "",
+            level: "",
+            token: "",
+            //文件信息列表
+            tableData: [{
+                id: '文件标识',
+                username: '所有者',
+                name: '文件名',
+                detail: '文件描述',
+                size: '文件大小',
+                type: '文件类型',
+                path: '下载链接',
+                date: '上传日期',
+                time: '上传时间',
+                public: '是否公开'
+            }],
+            multipleSelection: [],
+            //编辑文件信息 内容栏
+            form2: {
+                index: 0,
+                id: "",
+                data: [],
+                detail: '文件描述',
+                isPublic: false
+            },
+            //文件信息编辑窗口
+            dialogTableVisible: false,
+            dialogFormVisible: false,
+            formLabelWidth: '120px',
+            //用户信息编辑窗口
+            dialogTableVisible2: false,
+            dialogFormVisible2: false,
+            formLabelWidth2: '120px',
+            form3: {
+                nickname: "",
+                password: "",
+                confirm_password: "",
+                old_password: ""
+            },
+            //个性化设置编辑窗口
+            dialogTableVisible3: false,
+            dialogFormVisible3: false,
+            formLabelWidth3: '180px',
+            Personalize: {
+                descending: false,
+                onOverwrite: false,
+                onPublic: false
+            },
+            fileOrderOptions: [{
+                value: false,
+                label: '时间升序'
+            }, {
+                value: true,
+                label: '时间降序'
+            }],
+            defaultOptions: [{
+                value: false,
+                label: '禁用'
+            }, {
+                value: true,
+                label: '开启'
+            }],
+            //搜索内容
+            search: ""
+
+
+        },
+        created: function () {
+            // `this` 指向 vm 实例
+            var loginInfo = this.getStorage("userInfo")
+            if (loginInfo == null) {  //未获取到用户登录记录
+                window.location.assign("login.html")  //跳转到登录页面
+            } else {  //加载用户文件信息
+                this.username = loginInfo.username
+                this.nickname = loginInfo.nickname
+                this.token = loginInfo.token
+                this.level = loginInfo.level
+
+                //检查用户登录信息是否过期
+                var params = new URLSearchParams()
+                params.append('username', this.username)
+                params.append('token', this.token)
+                axios.post("./user/login/check", params).then(res => {
+                    var info = res.data
+                    //console.log("登录信息校验",info)
+                    if (info !== "true") {
+                        this.$message.error('登录信息失效，请重新登录')
+                        setTimeout(this.logout, 3000)
+                    }
+                })
+
+                this.getInfo()
+            }
+            var Personalize = this.getStorage("Personalize")  //加载用户个性化设置
+            if (Personalize != null)
+                this.Personalize = Personalize
+        },
+        mounted: function () {  //vue中的一个钩子函数，一般在初始化页面完成后，再对dom节点进行相关操作。
+            this.fetTableHeight();
+        },
+
+        //函数写在这里
+        methods: {
+            setStorage(key, value) {
+                localStorage.setItem(key, JSON.stringify(value))
+            },
+            getStorage(key) {
+                return JSON.parse(localStorage.getItem(key))
+            },
+            getInfo() {
+                var params = new URLSearchParams()
+                params.append('username', this.username)
+                params.append('token', this.token)
+                axios.post("./file/get/self", params).then(res => {
+                    var tmp = res.data
+                    tmp = JSON.parse(tmp)
+                    if (this.Personalize.descending)  //反转
+                        this.reverseJSON(tmp)
+                    for (var i = 0; i < tmp.length; ++i) {
+                        tmp[i].size = this.formatSize(tmp[i].size)
+                        // tmp[i].path = "/netdisk/upload/" + tmp[i].username + "/" + escape(tmp[i].name)
+                        console.log(tmp[i].path)
+                    }
+                    this.tableData = tmp
+                })
+            },
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            updateFileInfo() {
+                this.dialogFormVisible = false
+                if (this.form2.id !== "") {
+                    //发送axios的post请求
+                    var params = new URLSearchParams();
+                    params.append("username", this.username) //需要提供用户身份信息，避免文件信息被篡改
+                    params.append("token", this.token)
+                    params.append('id', this.form2.id);
+                    params.append('detail', this.form2.detail);
+                    params.append('isPublic', this.form2.isPublic);
+                    axios.post("./file/update", params).then(res => {
+                        var info = res.data
+                        if (info == 1) {
+                            //更新当前信息
+                            var index = this.form2.index
+                            this.tableData[index].detail = this.form2.detail
+                            this.tableData[index].public = this.form2.isPublic
+                            this.$message.success('文件信息更新成功')
+                        } else if (info == -1) {
+                            this.$message.error('您无权编辑该文件的信息')
+                        } else {
+                            this.$message.error('文件信息未更新')
+                        }
+
+                    })
+                }
+            },
+            editFileInfo(index, row) {
+                this.dialogFormVisible = true
+                // console.log(row)
+                this.form2.index = index
+                this.form2.id = row.id
+                this.form2.detail = row.detail
+                this.form2.isPublic = row.public
+            },
+            editPersonalize(flag) {
+                console.log("点击更改", flag)
+                if (flag !== undefined) {  //点击确定
+                    this.dialogFormVisible3 = false
+                    this.setStorage("Personalize", this.Personalize)
+                    //this.reverseJSON(this.tableData)
+                } else
+                    this.dialogFormVisible3 = true
+
+
+            },
+            deleteFiles() {
+                var params = new URLSearchParams()
+                params.append("username", this.username)
+                params.append("token", this.token)
+                for (var i = 0; i < this.multipleSelection.length; ++i) {
+                    params.append("ids", this.multipleSelection[i].id)
+                }
+                axios.post("./file/delete", params).then(res => {
+                    var info = res.data
+                    info = parseInt(info)
+                    if (info >= 0)
+                        this.$message.success('成功删除' + info + "个文件");
+                    else if (info == -1)
+                        this.$message.error("非法操作")
+                    else
+                        this.$message.error("未知错误")
+                    this.getInfo()
+                })
+            },
+            uploadFile() {
+                window.open("upload.jsp", '_blank', 'width=500px,height=500px')
+            },
+            formatSize(n) {
+                if (n < 1024)
+                    return n + " B"
+                if (n < 1048576)
+                    return (n / 1024).toFixed(1) + " KB"
+                if (n < 1073741824)
+                    return (n / 1048576).toFixed(1) + " MB";
+                else
+                    return (n / 1073741824).toFixed(1) + " GB";
+            },
+            logout() {
+                localStorage.removeItem("userInfo");  //清除登录缓存
+                window.location.assign("login.html")  //跳转到登录页面
+            },
+            deleteFilesConfirm() {
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '确认删除', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.deleteFiles()
+                    this.$message({
+                        type: 'success',
+                        message: '已确认删除!'
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            logoutConfirm() {
+                this.$confirm('您将退出登录，是否继续？', '确认注销', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.logout()
+                    this.$message({
+                        type: 'success',
+                        message: '正在注销登录!'
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '取消注销操作'
+                    });
+                });
+            },
+            checkPassword(s) {
+                var pattern = /^[A-Za-z0-9]{4,18}$/
+                return pattern.test(s)
+            },
+            checkNickname(s) {
+                var pattern = /^[\u4E00-\u9FA5A-Za-z0-9]{1,15}$/
+                return pattern.test(s)
+            },
+            editUserInfo() {
+                this.form3.nickname = this.nickname
+                this.dialogFormVisible2 = true
+            },
+            updateUserInfo() {
+                if (!this.checkNickname(this.form3.nickname)) {
+                    this.$message.error('昵称格式不正确');
+                } else {
+                    var params = new URLSearchParams()
+                    params.append("username", this.username)
+                    params.append("nickname", this.form3.nickname)
+                    params.append("old_password", this.form3.old_password)
+                    params.append("password", this.form3.password)
+                    params.append("token", this.token)
+                    axios.post("./user/update", params).then(res => {
+                        this.dialogFormVisible2 = false
+                        var info = res.data
+                        if (info == 1)
+                            this.$message.error('昵称格式不正确');
+                        else if (info == 2)
+                            this.$message.error('密码格式不正确');
+                        else if (info == 3)
+                            this.$message.error('原密码不正确');
+                        else if (info == 4)
+                            this.$message.error('身份校验失败，请注销后重新登录再次尝试');
+                        else if (info == 5) {
+                            this.$message.success('昵称更新成功');
+                            var userInfo = this.getStorage("userInfo")  //从缓存中取出用户信息
+                            this.nickname = userInfo.nickname = this.form3.nickname  //更新昵称
+                            console.log(userInfo)
+                            this.setStorage("userInfo", userInfo)  //将更新后的信息存入
+                        } else if (info == 6) {
+                            this.$message.success('信息更新成功');
+                            setTimeout(this.logout, 3000)
+                        } else
+                            this.$message.error('信息更新失败');
+
+                    })
+                }
+            },
+            toManage() {
+                window.location.assign("manage.html")  //跳转到登录页面
+            },
+            getPublicInfo() {
+                var params = new URLSearchParams()
+                params.append("username", this.username)
+                params.append("token", this.token)
+                axios.post("./file/get/public", params).then(res => {
+                    var tmp = res.data
+                    tmp = JSON.parse(tmp)
+                    if (this.Personalize.descending)  //反转
+                        this.reverseJSON(tmp)
+                    for (var i = 0; i < tmp.length; ++i)
+                        tmp[i].size = this.formatSize(tmp[i].size)
+                    this.tableData = tmp
+                })
+            },
+            reverseJSON(theJSON) {
+                var len = theJSON.length
+                for (var i = 0; i <= len / 2; i++) {
+                    this.swapObj(theJSON, i, len - i - 1)
+                }
+            },
+            swapObj(arr, i, j) {
+                var tmp = arr[i]
+                arr[i] = arr[j]
+                arr[j] = tmp
+            },
+            // 重置table高度
+            resetHeight() {
+                return new Promise((resolve, reject) => {
+                    this.tableH = 0
+                    resolve()
+                })
+            },
+            // 设置table高度
+            fetTableHeight() {
+                this.resetHeight().then(res => {
+                    this.tableH = document.documentElement.clientHeight - 300
+                })
+            }
+        }
+    })
+</script>
+</html>

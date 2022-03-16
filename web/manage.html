@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <!--禁用缓存-->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <title>网盘用户管理系统</title>
+    <link rel="icon" href="img/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="css/elementUI.css"/>
+    <script src="js/vue.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/axios.min.js" type="text/javascript"></script>
+    <script src="js/elementUI.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="app">
+    <hgroup>
+        <h1>网盘用户管理系统</h1>
+    </hgroup>
+    <el-button @click="getUserInfo()">获取用户信息</el-button>
+    <el-button @click="logoutConfirm()">注销</el-button>
+
+    <p>用户信息</p>
+    <el-table
+            ref="multipleTable"
+            :data="tableData"
+            tooltip-effect="dark"
+            style="width: 100%"
+            @selection-change="handleSelectionChange">
+        <el-table-column
+                type="selection"
+                width="55">
+        </el-table-column>
+        <el-table-column
+                label="用户id"
+                width="170"
+                prop="id">
+        </el-table-column>
+        <el-table-column
+                prop="username"
+                label="用户名"
+                width="170">
+            <template slot-scope="scope">{{ scope.row.username }}</template>
+        </el-table-column>
+        <el-table-column
+                prop="nickname"
+                label="昵称"
+                width="170">
+            <template slot-scope="scope">{{ scope.row.nickname }}</template>
+        </el-table-column>
+        <el-table-column
+                prop="password"
+                label="密码"
+                width="170">
+            <template slot-scope="scope">{{ scope.row.password }}</template>
+        </el-table-column>
+        <el-table-column
+                prop="level"
+                label="等级"
+                width="140">
+            <template slot-scope="scope">{{ scope.row.level }}</template>
+        </el-table-column>
+        <el-table-column
+                prop="capacity"
+                label="容量"
+                width="140">
+        </el-table-column>
+        <el-table-column
+                prop="token"
+                label="密钥"
+                width="150">
+            <template slot-scope="scope">{{ scope.row.token }}</template>
+        </el-table-column>
+
+        <el-table-column
+                label="操作">
+            <template slot-scope="scope">
+                <el-button type="text" @click="editUserInfo(scope.$index, scope.row)">编辑用户信息</el-button>
+            </template>
+        </el-table-column>
+
+    </el-table>
+
+    <!--    编辑用户信息弹窗-->
+    <el-dialog title="编辑用户信息" :visible.sync="dialogFormVisible">
+        <el-form :model="form" autocomplete="off">
+            <el-form-item label="用户名" :label-width="formLabelWidth">
+                <el-input v-model="form.username" autocomplete="off" :disabled="true"></el-input>
+            </el-form-item>
+            <el-form-item label="昵称" :label-width="formLabelWidth">
+                <el-input v-model="form.nickname" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" :label-width="formLabelWidth">
+                <el-input placeholder="如需更改密码，请在此输入新密码" v-model="form.password" show-password
+                          autocomplete="new-password"></el-input>
+            </el-form-item>
+            <el-form-item label="等级" :label-width="formLabelWidth">
+                <el-input v-model="form.level" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="容量" :label-width="formLabelWidth">
+                <el-input v-model="form.capacity" autocomplete="off" :disabled="true"></el-input>
+            </el-form-item>
+            <el-form-item label="密钥" :label-width="formLabelWidth">
+                <el-input v-model="form.token" autocomplete="off"></el-input>
+            </el-form-item>
+
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="dialogFormVisible = false">取 消</el-button>
+            <el-button type="primary" @click="updateUserInfo()">确 定</el-button>
+        </div>
+    </el-dialog>
+
+
+</div>
+</body>
+<script>
+    new Vue({
+        //作用域
+        el: '#app',
+        //初始化数据
+        data: {
+            //登录系统用户身份
+            userInfo: {},
+            //用户信息列表
+            multipleSelection: [],
+            tableData: [],
+            //编辑用户信息
+            clickIndex: 0,
+            dialogFormVisible: false,
+            formLabelWidth: '120px',
+            form: {
+                id: "",
+                username: "",
+                password: "",
+                nickname: "",
+                capacity: "",
+                token: "",
+                level: ""
+            }
+        },
+        created: function () {
+            try {
+                var userInfo = JSON.parse(localStorage.getItem("userInfo"))
+                if (userInfo == null) {
+                    window.location.assign("login.html")  //跳转到登录页面
+                } else {
+                    this.userInfo = userInfo  //将用户信息存入vue变量中
+                    this.getUserInfo()
+                }
+            } catch (e) {
+                console.log(e)
+                window.location.assign("login.html")  //跳转到登录页面
+            }
+
+
+        },
+        //函数写在这里
+        methods: {
+            logoutConfirm() {
+                this.$confirm('您将退出登录，是否继续？', '确认注销', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.logout()
+                    this.$message({
+                        type: 'success',
+                        message: '正在注销登录!'
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '取消注销操作'
+                    });
+                });
+            },
+            logout() {
+                localStorage.removeItem("userInfo");  //清除登录缓存
+                window.location.assign("login.html")  //跳转到登录页面
+            },
+            toggleSelection(rows) {
+                if (rows) {
+                    rows.forEach(row => {
+                        this.$refs.multipleTable.toggleRowSelection(row);
+                    });
+                } else {
+                    this.$refs.multipleTable.clearSelection();
+                }
+            },
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            editUserInfo(index, row) {
+                this.dialogFormVisible = true
+                this.clcikIndex = index
+                //console.log(row)
+                //this.form = row
+                this.form.id = row.id
+                this.form.username = row.username
+                this.form.password = row.password
+                this.form.nickname = row.nickname
+                this.form.capacity = row.capacity
+                this.form.token = row.token
+                this.form.level = row.level
+            },
+            formatSize(n) {
+                if (n < 1024)
+                    return n + " B"
+                if (n < 1048576)
+                    return (n / 1024).toFixed(1) + " KB"
+                if (n < 1073741824)
+                    return (n / 1048576).toFixed(1) + " MB";
+                else
+                    return (n / 1073741824).toFixed(1) + " GB";
+            },
+            getUserInfo() {
+                var params = new URLSearchParams();
+                params.append("username", this.userInfo.username)
+                params.append("token", this.userInfo.token)
+                axios.post("./GetUserInfoServlet", params).then(res => {
+                    console.log(res)
+                    var tmp = res.data
+                    for (var i = 0; i < tmp.length; ++i) {
+                        tmp[i].capacity = this.formatSize(tmp[i].capacity)  //将容量显示格式化
+                    }
+                    this.tableData = tmp
+                })
+            },
+            updateUserInfo() {
+                var params = new URLSearchParams();
+                params.append("admin_username", this.userInfo.username)
+                params.append("admin_token", this.userInfo.token)
+                params.append("username", this.form.username)
+                params.append("password", this.form.password)
+                params.append("nickname", this.form.nickname)
+                params.append("level", this.form.level)
+                params.append("token", this.form.token)
+                axios.post("./UpdateUserInfoAdminServlet", params).then(res => {
+                    var info = res.data
+                    var index = this.clcikIndex
+
+                    if (info.username !== undefined) {
+                        this.tableData[index].level = info.level
+                        this.tableData[index].password = info.password
+                        this.tableData[index].nickname = info.nickname
+                        this.tableData[index].token = info.token
+                        this.$message.success('用户信息修改成功')
+                    } else
+                        this.$message.error(info)
+                })
+                this.dialogFormVisible = false
+            }
+        }
+    })
+</script>
+</html>

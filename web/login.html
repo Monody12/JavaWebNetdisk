@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <!--禁用缓存-->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <title>登录</title>
+    <link rel="icon" href="img/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="css/elementUI.css"/>
+    <script src="js/vue.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/axios.min.js" type="text/javascript"></script>
+    <script src="js/elementUI.js" type="text/javascript"></script>
+    <style type="text/css">
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            align-items: center; /*定义body的元素垂直居中*/
+            justify-content: center; /*定义body的里的元素水平居中*/
+        }
+
+        #login {
+
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="login">
+        <h3 style="margin-left: 100px">登录我的个人网盘</h3>
+        <el-form ref="form" :model="form" label-width="80px">
+            <el-form-item label="用户名">
+                <el-input v-model="form.username"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="pass">
+                <el-input type="password" v-model="form.password"></el-input>
+            </el-form-item>
+            <p style="color: red">{{errorInfo}}</p>
+            <el-button type="primary" style="margin-left: 80px" @click="submitForm">登录</el-button>
+            <el-link href="register.html" target="_blank" :underline="false" style="margin-left: 10px">注册</el-link>
+        </el-form>
+    </div>
+</div>
+</body>
+<script>
+    new Vue({
+        //作用域
+        el: '#app',
+        //初始化数据
+        data: {
+            form: {
+                username: "",
+                password: ""
+            },
+            errorInfo: ""
+        },
+        mounted: function () {
+            this.$nextTick(function () {
+                    // Code that will run only after the
+                    // entire view has been rendered
+                    if (JSON.parse(localStorage.getItem("userInfo")) != null) { //如果用户已经登录了
+                        window.location.assign("index.html")  //跳转到用户文件页面
+                    }
+                }
+            )
+        },
+        //函数写在这里
+        methods: {
+            setStorage(key, value) {
+                localStorage.setItem(key, JSON.stringify(value));
+            },
+            getStorage(key) {
+                return JSON.parse(localStorage.getItem(key));
+            },
+            submitForm() {
+                if (!this.checkUsername(this.form.username))
+                    this.errorInfo = "用户名格式错误"
+                else if (!this.checkPassword(this.form.password))
+                    this.errorInfo = "密码格式错误"
+                else {
+                    this.errorInfo = ""
+                    var params = new URLSearchParams();
+                    params.append("username", this.form.username)
+                    params.append("password", this.form.password)
+                    axios.post("./user/login", params).then(res => {
+                        console.log(res)
+                        var info = res.data
+                        if (info !== "用户名和密码不匹配") {
+                            info = JSON.parse(info);
+                            console.warn(info)
+                            this.setStorage("userInfo", info)
+                            console.log(this.getStorage("userInfo"))
+                            window.location.assign("index.html")  //跳转到用户文件页面
+                        } else {
+                            this.errorInfo = info
+                        }
+                    })
+
+
+                }
+            },
+            checkUsername(s) {
+                var pattern = /^\w{4,18}$/
+                return pattern.test(s)
+            },
+            checkPassword(s) {
+                var pattern = /^[A-Za-z0-9]{4,18}$/
+                return pattern.test(s)
+            },
+            isJSON(str) {
+                if (typeof str == 'string') {
+                    try {
+                        var obj = JSON.parse(str)
+                        return !!(typeof obj == 'object' && obj);
+
+                    } catch (e) {
+                        return false;
+                    }
+                }
+            }
+        }
+    })
+</script>
+</html>
