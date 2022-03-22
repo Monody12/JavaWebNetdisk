@@ -3,18 +3,27 @@ package com.netdisk.test;
 import com.netdisk.entity.File;
 import com.netdisk.entity.User;
 import com.netdisk.mapper.UserMapper;
+import com.netdisk.service.ShareFileService;
 import com.netdisk.service.impl.FileServiceImpl;
 import com.netdisk.service.impl.UserServiceImpl;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:applicationContext.xml")
@@ -29,6 +38,12 @@ UserTest {
 
     @Autowired
     private FileServiceImpl fileService;
+
+    @Autowired
+    private ShareFileService sharedFileService;
+
+    @Autowired
+    private RedisTemplate<String,String>redisTemplate;
 
     static ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
 
@@ -138,11 +153,31 @@ UserTest {
 
     @Test
     public void test13(){
+        UUID uuid = UUID.randomUUID();
 
+        System.out.println(uuid.toString());
+    }
+
+    @Test
+    public void test14(){
+//        String add = sharedFileService.add("123", ,"1234",1);
+//        System.out.println(add);
+    }
+
+    @Test
+    public void test15(){
+        ValueOperations<String, String> ops = redisTemplate.opsForValue();
+        ops.set("abc","abc");
+    }
+
+    public void AA(Integer i){
+        i++;
     }
 
     @Test
     public void test(){
+
+
 
     }
 }

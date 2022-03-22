@@ -17,6 +17,7 @@ public class MyExceptionResolver implements HandlerExceptionResolver {
         }else{
             modelAndView.addObject("errorType","other");
         }
+        ex.printStackTrace();
         return modelAndView;
     }
 }

@@ -2,11 +2,14 @@ package com.netdisk.service;
 
 import com.netdisk.entity.File;
 import com.netdisk.entity.User;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
 public interface FileService {
     public List<File> findAllByUsername(User user);
+
+    List<File> getSomeFilesByIds(@Param("fileId") List<String> fileId);
 
     public File findFileInfoById(File file);
 

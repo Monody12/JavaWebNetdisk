@@ -1,5 +1,8 @@
 package com.netdisk.entity;
 
+/**
+ * @author monody
+ */
 public class File {
     private String id;  //主键 唯一值
     private String username;
@@ -109,5 +112,13 @@ public class File {
                 ", isPublic=" + isPublic +
                 '}';
     }
+
+    public File() {
+    }
+
+    public File(String id) {
+        this.id = id;
+    }
+
 
 }
