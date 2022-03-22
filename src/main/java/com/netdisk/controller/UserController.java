@@ -8,6 +8,7 @@ import com.netdisk.utils.InputCheck;
 import com.netdisk.utils.SnowflakeIdWorker;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -22,7 +23,7 @@ public class UserController {
 
     private static final SnowflakeIdWorker snowflakeIdWorker = new SnowflakeIdWorker(0, 0);
 
-    @RequestMapping("/login")
+    @RequestMapping(value = "/login",method = RequestMethod.POST)
     @ResponseBody
     public String login(User user) throws JsonProcessingException {
 
@@ -37,7 +38,7 @@ public class UserController {
         }
     }
 
-    @RequestMapping("/login/check")
+    @RequestMapping(value = "/login/check",method = RequestMethod.POST)
     @ResponseBody
     public String loginCheck(User user) {  //校验用户登录状态
         boolean checkToken = userService.checkToken(user);
@@ -47,7 +48,7 @@ public class UserController {
             return "false";
     }
 
-    @RequestMapping("/update")
+    @RequestMapping(value = "/update",method = RequestMethod.POST)
     @ResponseBody
     public String update(User user, @RequestParam(required = true) String old_password) throws JsonProcessingException {
         if (!InputCheck.nicknameCheck(user.getNickname()))
@@ -81,7 +82,7 @@ public class UserController {
         return "3";
     }
 
-    @RequestMapping("/new")
+    @RequestMapping(value = "/new",method = RequestMethod.POST)
     @ResponseBody
     public String newUser(User user) {
         if (!InputCheck.usernameCheck(user.getUsername()))

@@ -4,9 +4,11 @@ import com.netdisk.entity.File;
 import com.netdisk.entity.User;
 import com.netdisk.mapper.FileMapper;
 import com.netdisk.service.FileService;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+@Slf4j
 public class FileServiceImpl implements FileService {
 
     private FileMapper fileMapper;
@@ -18,6 +20,12 @@ public class FileServiceImpl implements FileService {
     @Override
     public List<File> findAllByUsername(User user) {
         return fileMapper.findAllByUsername(user);
+    }
+
+    @Override
+    public List<File> getSomeFilesByIds(List<String> fileId) {
+        log.debug("FileServiceImpl_getSomeFilesByIds----- fileId = {}",fileId);
+        return fileMapper.getSomeFilesByIds(fileId);
     }
 
     @Override

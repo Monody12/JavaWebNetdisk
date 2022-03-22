@@ -7,6 +7,13 @@
         select * from files where username = #{username}
     </select>
 
+    <select id="getSomeFilesByIds" parameterType="java.lang.String" resultType="com.netdisk.entity.File">
+        select `id`,`username`,`name`,`detail`,`size`,`type` from files where `id` in
+        <foreach item="id" collection="list" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
     <select id="findFileInfoById" parameterType="com.netdisk.entity.File" resultType="com.netdisk.entity.File">
         select * from files where `id` = #{id}
     </select>

@@ -8,6 +8,8 @@ import java.util.List;
 public interface FileMapper {
     public List<File> findAllByUsername(User user);
 
+    public List<File> getSomeFilesByIds(List<String> fileId);
+
     public File findFileInfoById(File file);
 
     public List<File> findPublicFile();
