@@ -60,6 +60,7 @@
         <property name="listRedisTemplate" ref="redisTemplate"/>
         <property name="fileService" ref="fileService"/>
         <property name="shareFileServiceMapper" ref="shareFileServiceMapper"/>
+        <property name="objectMapper" ref="objectMapper"/>
     </bean>
 
     <!--配置redis相关的bean-->
@@ -97,6 +98,8 @@
     </bean>
 
     <bean class="com.netdisk.config.SwaggerConfig"/>
+
+    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
 
 
     <import resource="spring-mvc.xml"/>

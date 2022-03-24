@@ -3,6 +3,7 @@ package com.netdisk.service;
 import com.netdisk.entity.bo.SharedFile;
 import com.netdisk.entity.dto.UserFiles;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -19,7 +20,7 @@ public interface ShareFileService {
      * @param day 有效天数
      * @return 分享链接
      */
-    String add(String username, List<String> fileId, String code, int day);
+    String add(String username, List<String> fileId, String code, int day) throws IOException;
 
     /**
      * 生成临时token给受分享用户
@@ -44,7 +45,7 @@ public interface ShareFileService {
      * @param fileLink 文件链接
      * @return 分享文件信息
      */
-    SharedFile getFile(String fileLink);
+    SharedFile getFile(String fileLink) throws IOException;
 
 
     /**

@@ -23,6 +23,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -75,7 +76,7 @@ public class ShareFileController {
             @ApiImplicitParam(name = "code", value = "提取码", dataType = "String", required = true)
     })
     @RequestMapping(value = "/share", method = RequestMethod.POST)
-    public BaseResponseEntity share(@ApiIgnore User user, String code, String[] fileId, int day) {
+    public BaseResponseEntity share(@ApiIgnore User user, String code, String[] fileId, int day) throws IOException {
         if (!ShareFileCheck.checkDayLegal(day)) {
             return BaseResponse.fail("非法分享天数");
         }
@@ -104,7 +105,7 @@ public class ShareFileController {
 
     @RequestMapping(value = "/share/get/{fileLink}", method = RequestMethod.GET)
     public ModelAndView view(@PathVariable(required = true, name = "fileLink") String fileLink, String code,
-                             @ApiIgnore ModelAndView modelAndView, @ApiIgnore HttpServletResponse response) {
+                             @ApiIgnore ModelAndView modelAndView, @ApiIgnore HttpServletResponse response) throws IOException {
         response.setCharacterEncoding("UTF-8");
         log.debug("fileLink: {} ; code: {}", fileLink, code);
         SharedFile sharedFile = shareFileService.getFile(fileLink);
@@ -139,14 +140,18 @@ public class ShareFileController {
         return modelAndView;
     }
 
-    @RequestMapping(value = "/share/download/{fileId}", method = RequestMethod.POST)
-    public ModelAndView download(@PathVariable String fileId, @RequestParam String token, @ApiIgnore ModelAndView modelAndView) {
-        String file = shareFileService.downloadFile(token, fileId);
-        log.debug("file = {}",file);
-        if (file != null) {
-
+    @RequestMapping(value = "/share/download/{fileId}", method = {RequestMethod.GET})
+    public ModelAndView download(@PathVariable String fileId, @RequestParam String token,
+                                 @ApiIgnore ModelAndView modelAndView, @ApiIgnore HttpServletResponse response) {
+        response.setCharacterEncoding("UTF-8");
+        String filePath = shareFileService.downloadFile(token, fileId);
+        log.debug("file = {}", filePath);
+        if (filePath != null) {
+            modelAndView.setViewName("forward:" + filePath.substring(21));
+        } else {
+            return null;
+//            modelAndView.setViewName("forward:/timeout.html");
         }
-        modelAndView.setViewName("forward:/timeout.html");
         return modelAndView;
     }
 }
