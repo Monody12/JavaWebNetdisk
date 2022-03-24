@@ -1,5 +1,6 @@
 package com.netdisk.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netdisk.entity.File;
 import com.netdisk.entity.bo.SharedFile;
 import com.netdisk.entity.dto.UserFiles;
@@ -10,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
+import java.io.IOException;
+import java.text.ParseException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -51,19 +54,28 @@ public class ShareFileServiceImpl implements ShareFileService {
         this.shareFileServiceMapper = shareFileServiceMapper;
     }
 
+    private ObjectMapper objectMapper;
+
+    public void setObjectMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
     @Override
-    public String add(String username, List<String> fileId, String code, int day) {
-        ValueOperations<String, SharedFile> op = sharedFileRedisTemplate.opsForValue();
+    public String add(String username, List<String> fileId, String code, int day) throws IOException {
+        ValueOperations<String, String> op = stringRedisTemplate.opsForValue();
         String fileLink = username + "-" + UUID.randomUUID();
+
         SharedFile sharedFile = new SharedFile() {{
             setUsername(username);
             setFileId(fileId);
             setCode(code);
             setFileLink(fileLink);
         }};
-        op.set(fileLink, sharedFile, day, TimeUnit.DAYS);
-        SharedFile file = op.get(fileLink);
-        log.debug("生成的分享文件信息为：{}", file);
+        String s = objectMapper.writeValueAsString(sharedFile);
+        op.set(fileLink, s, day, TimeUnit.DAYS);
+        String o = op.get(fileLink);
+        SharedFile value = objectMapper.readValue(o, SharedFile.class);
+        log.debug("生成的分享文件信息为：{}", value);
         return fileLink;
     }
 
@@ -71,13 +83,15 @@ public class ShareFileServiceImpl implements ShareFileService {
     public String generateToken(List<String> fileId) {
         ValueOperations<String, List> ops = listRedisTemplate.opsForValue();
         String uuid = "T-" + UUID.randomUUID().toString();
-        ops.set(uuid, fileId, 10, TimeUnit.MINUTES);
+        ops.set(uuid, fileId, 5, TimeUnit.MINUTES);
         return uuid;
     }
 
     @Override
     public String downloadFile(String token, String fileId) {
-        if (token.charAt(0) == 'T') {
+        // 验证传入token的合法性
+        if (token != null && token.charAt(0) == 'T' && stringRedisTemplate.opsForValue().get(token) != null) {
+            // 查询这个下载的文件是否在分享列表中
             ValueOperations<String, List> ops = listRedisTemplate.opsForValue();
             List list = ops.get(token);
             if (list != null && list.contains(fileId)) {
@@ -90,9 +104,12 @@ public class ShareFileServiceImpl implements ShareFileService {
 
 
     @Override
-    public SharedFile getFile(String fileLink) {
-        ValueOperations<String, SharedFile> op = sharedFileRedisTemplate.opsForValue();
-        return op.get(fileLink);
+    public SharedFile getFile(String fileLink) throws IOException {
+        log.debug("getFile : {}", fileLink);
+        ValueOperations<String, String> op = stringRedisTemplate.opsForValue();
+        String s = op.get(fileLink);
+        SharedFile sharedFile = objectMapper.readValue(s, SharedFile.class);
+        return sharedFile;
     }
 
     @Override

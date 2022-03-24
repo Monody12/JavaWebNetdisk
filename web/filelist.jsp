@@ -12,6 +12,7 @@
     <title>分享文件列表</title>
 </head>
 <body>
+<h2 style="color: red" id="info"></h2>
 <table border="1">
     <tr>
         <th>文件名</th>
@@ -21,18 +22,14 @@
         <th>下载链接</th>
     </tr>
     <jsp:useBean id="files" scope="request" type="java.util.List"/>
-
     <c:forEach var="file" items="${files}" varStatus="fileStatus" step="1">
         <tr>
             <td>${file.name}</td>
             <td>${file.type}</td>
-            <td><span id="${fileStatus.step}">${file.detail}</span></td>
-            <td>${file.size} 字节</td>
+            <td>${file.detail}</td>
+            <td><span id="${fileStatus.step}">${file.size}</span></td>
             <td>
-                <form method="post" action="../download/${file.id}">
-                    <input name="token" value="${token}" hidden>
-                    <button type="submit">立即下载</button>
-                </form>
+                <a href="../download/${file.id}?token=${token}" download="${file.name}">点击下载</a>
             </td>
         </tr>
     </c:forEach>
@@ -41,7 +38,12 @@
     var _1MB = 1024 * 1024;
     var _1KB = 1024;
     window.onload = function () {
-        var spans = document.getElementsByClassName("span");
+        console.log("执行了window.onload")
+        var spans = document.getElementsByTagName("span");
+        setTimeout(() => {
+            alert("页面过期，请刷新！")
+            document.getElementById("info").innerText = "文件链接已过期，请刷新！"
+        }, 60 * 5 * 1000)
         for (var i = 0; spans !== undefined && i < spans.length; ++i) {
             var size = spans[i].innerHTML;
             if (size > _1MB) {
