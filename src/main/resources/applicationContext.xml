@@ -10,10 +10,13 @@
 
     <!--1. 加载jdbc配置文件-->
     <context:property-placeholder location="classpath:jdbc.properties" ignore-unresolvable="true"/>
+<!--    <context:property-placeholder location="classpath:jdbc-server.properties" ignore-unresolvable="true"/>-->
     <!--加载Redis配置文件-->
     <context:property-placeholder location="classpath:redis.properties" ignore-unresolvable="true"/>
     <!--加载服务器路径配置文件-->
+    <!--ShareFileController 中有一个需要修改配置文件的注解-->
     <context:property-placeholder location="classpath:server.properties" ignore-unresolvable="true"/>
+<!--    <context:property-placeholder location="classpath:server-server.properties" ignore-unresolvable="true"/>-->
 
 
     <!--2. 配置数据源-->

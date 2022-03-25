@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
 
 /**
  * @author monody
@@ -37,7 +38,8 @@ import java.util.List;
 @RequestMapping("/file")
 @Controller
 @Slf4j
-@PropertySource(value = {"classpath:server.properties"})
+//@PropertySource(value = {"classpath:server.properties"})
+@PropertySource(value = {"classpath:server-server.properties"})
 public class ShareFileController {
 
     @Resource(description = "fileService")
@@ -80,7 +82,7 @@ public class ShareFileController {
             @ApiImplicitParam(name = "nickname", value = "昵称", dataType = "String", required = true)
     })
     @RequestMapping(value = "/share", method = RequestMethod.POST)
-    public BaseResponseEntity share(@ApiIgnore User user, String code, String[] fileId, int day,String nickname) throws IOException {
+    public BaseResponseEntity share(@ApiIgnore User user, String code, String[] fileId, int day, String nickname) throws IOException {
         if (!ShareFileCheck.checkDayLegal(day)) {
             return BaseResponse.fail("非法分享天数");
         }
@@ -106,7 +108,7 @@ public class ShareFileController {
                     String expTime = sdf.format(expirationTime.getTime());
                     String content = String.format("%s 给您分享了一些文件，请在 %s 前查看。请点击以下链接 %s 并使用提取码 %s 进行访问。",
                             nickname, expTime, webLink, code);
-                    log.debug("shareLog：{}",content);
+                    log.debug("shareLog：{}", content);
                     put("content", content);
                 }});
             }
@@ -158,7 +160,11 @@ public class ShareFileController {
         String filePath = shareFileService.downloadFile(token, fileId);
         log.debug("file = {}", filePath);
         if (filePath != null) {
-            modelAndView.setViewName("forward:" + filePath.substring(21));
+            // 注意：若系统运行在Windows下必须将文件分隔符'\'替换成'/'，进行转发时才能被识别为绝对路径
+            filePath = filePath.replaceAll("\\\\", Matcher.quoteReplacement("/"));
+            String viewName = "forward:"  + filePath.substring(serverApplicationName.length() + 1);
+            log.debug("viewName = {}", viewName);
+            modelAndView.setViewName(viewName);
         } else {
             return null;
 //            modelAndView.setViewName("forward:/timeout.html");
