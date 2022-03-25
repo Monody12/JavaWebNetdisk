@@ -41,9 +41,11 @@
                 tooltip-effect="dark"
                 style="width: 100%"
                 @selection-change="handleSelectionChange"
+                :row-key="row => { return row.id }"
                 :height=tableH
         >
             <el-table-column
+                    :reserve-selection="true"
                     type="selection"
                     width="55">
             </el-table-column>
@@ -103,7 +105,6 @@
                     label="公开性">
                 <template slot-scope="scope">{{ scope.row.public?"是":"否" }}</template>
             </el-table-column>
-            user
 
             <el-table-column
                     fixed="right"
@@ -131,6 +132,10 @@
     <div style="margin-top: 20px">
         <template>
             <el-button @click="deleteFilesConfirm()">删除选中文件</el-button>
+        </template>
+
+        <template>
+            <el-button @click="dialogFormVisible4 = true">分享选中文件</el-button>
         </template>
     </div>
 
@@ -226,6 +231,26 @@
         </div>
     </el-dialog>
 
+    <el-dialog title="文件分享" :visible.sync="dialogFormVisible4">
+        <el-form :model="form4">
+            <el-form-item label="提取码" :label-width="formLabelWidth">
+                <el-input v-model="form4.code" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="有效时间" :label-width="formLabelWidth">
+                <el-select v-model="form4.day" placeholder="请选择分享持续天数">
+                    <el-option label="1 天" value="1"></el-option>
+                    <el-option label="3 天" value="3"></el-option>
+                    <el-option label="7 天" value="7"></el-option>
+                    <el-option label="30 天" value="30"></el-option>
+                </el-select>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="dialogFormVisible4 = false">取 消</el-button>
+            <el-button type="primary" @click="shareFiles()">确 定</el-button>
+        </div>
+    </el-dialog>
+
 </div>
 </body>
 <script>
@@ -302,7 +327,14 @@
                 label: '开启'
             }],
             //搜索内容
-            search: ""
+            search: "",
+            // 文件分享弹窗
+            dialogFormVisible4: false,
+            formLabelWidth4: '120px',
+            form4: {
+                code: '',
+                day: null
+            },
 
 
         },
@@ -374,7 +406,7 @@
                     //发送axios的post请求
                     var params = new URLSearchParams();
                     params.append("username", this.username) //需要提供用户身份信息，避免文件信息被篡改
-                    params.append("token", this.token)
+                    params.append("token", this.token);
                     params.append('id', this.form2.id);
                     params.append('detail', this.form2.detail);
                     params.append('isPublic', this.form2.isPublic);
@@ -451,6 +483,13 @@
                 window.location.assign("login.html")  //跳转到登录页面
             },
             deleteFilesConfirm() {
+                if (this.multipleSelection.length === 0) {
+                    this.$message({
+                        type: 'error',
+                        message: '您没有选中任何文件'
+                    });
+                    return;
+                }
                 this.$confirm('此操作将永久删除该文件, 是否继续?', '确认删除', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
@@ -485,6 +524,40 @@
                         message: '取消注销操作'
                     });
                 });
+            },
+            shareFiles() {
+                if (this.multipleSelection.length === 0) {
+                    this.$message({
+                        type: 'error',
+                        message: '您没有选中任何文件'
+                    });
+                }
+                // this.dialogFormVisible4 = true
+                var params = new URLSearchParams()
+                params.append("username", this.username)
+                params.append("token", this.token)
+                params.append("nickname", this.nickname)
+                params.append("code", this.form4.code)
+                params.append("day", this.form4.day)
+                for (var i = 0; i < this.multipleSelection.length; ++i) {
+                    params.append("fileId", this.multipleSelection[i].id)
+                }
+                axios.post("./file/share", params).then(res => {
+                    var data = res.data
+                    console.log(data)
+                    if (data.code===200){
+                        this.$alert(data.resData.content,data.msg , {
+                            confirmButtonText: '确定',
+                        }).then(()=>{
+                            this.dialogFormVisible4 = false
+                        });
+                    }else {
+                        this.$message({
+                            type: 'error',
+                            message: data.msg
+                        });
+                    }
+                })
             },
             checkPassword(s) {
                 var pattern = /^[A-Za-z0-9]{4,18}$/

@@ -10,6 +10,7 @@ import com.netdisk.service.FileService;
 import com.netdisk.service.UserService;
 import com.netdisk.utils.GetFileType;
 import com.netdisk.utils.SnowflakeIdWorker;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @RequestMapping("/file")
 @Controller
 public class FileController {
@@ -39,7 +42,7 @@ public class FileController {
 
     private static final GetFileType getFileType = new GetFileType();
 
-    @RequestMapping(value = "/get/self",method = RequestMethod.POST)
+    @RequestMapping(value = "/get/self", method = RequestMethod.POST)
     @ResponseBody
     public String getSelfFiles(User user, HttpServletResponse response) throws JsonProcessingException {
         if (userService.checkToken(user)) {
@@ -51,7 +54,7 @@ public class FileController {
         return "{}";
     }
 
-    @RequestMapping(value ="/get/public",method = RequestMethod.POST)
+    @RequestMapping(value = "/get/public", method = RequestMethod.POST)
     @ResponseBody
     public String getPublicFiles(User user, boolean sort) throws JsonProcessingException {
         if (userService.checkToken(user)) {
@@ -62,10 +65,11 @@ public class FileController {
         return "{}";
     }
 
-    @RequestMapping(value = "/delete",method = RequestMethod.POST)
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
     @ResponseBody
-    public String delete(HttpServletRequest request, User user, String[] ids) {
+    public String delete(@ApiIgnore HttpServletRequest request, User user, String[] ids) {
         int cnt = 0;
+        log.debug("传入用户信息：{} 要删除的文件信息: {}", user, ids);
         if (userService.checkToken(user)) {  //验证用户token
             File tmp = new File();
             for (String id : ids) {
@@ -82,7 +86,7 @@ public class FileController {
         return String.valueOf(cnt);
     }
 
-    @RequestMapping(value ="/upload",method = RequestMethod.POST)
+    @RequestMapping(value = "/upload", method = RequestMethod.POST)
     public ModelAndView upload(ModelAndView modelAndView, HttpServletRequest request, User user, MultipartFile[] files, String detail, boolean isPublic, boolean isOverwrite) throws IOException {
         if (userService.checkToken(user)) {
             String separator = java.io.File.separator;
@@ -137,14 +141,14 @@ public class FileController {
             modelAndView.addObject("overwrite_file", overwrite_file);
 
             modelAndView.setViewName("forward:/message.jsp");
-        }else  //用户信息校验错误，跳转到登录页面
+        } else  //用户信息校验错误，跳转到登录页面
             modelAndView.setViewName("redirect:/index.html");
 
         return modelAndView;
     }
 
 
-    @RequestMapping(value ="/update",method = RequestMethod.POST)
+    @RequestMapping(value = "/update", method = RequestMethod.POST)
     @ResponseBody
     public String update(User user, File file, boolean isPublic) {
         file.setPublic(isPublic);

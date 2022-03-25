@@ -24,6 +24,9 @@ import springfox.documentation.annotations.ApiIgnore;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -73,10 +76,11 @@ public class ShareFileController {
             @ApiImplicitParam(name = "username", value = "用户名", dataType = "String", required = true),
             @ApiImplicitParam(name = "token", value = "密钥", dataType = "String", required = true),
             @ApiImplicitParam(name = "day", value = "有效天数", dataType = "int", required = true),
-            @ApiImplicitParam(name = "code", value = "提取码", dataType = "String", required = true)
+            @ApiImplicitParam(name = "code", value = "提取码", dataType = "String", required = true),
+            @ApiImplicitParam(name = "nickname", value = "昵称", dataType = "String", required = true)
     })
     @RequestMapping(value = "/share", method = RequestMethod.POST)
-    public BaseResponseEntity share(@ApiIgnore User user, String code, String[] fileId, int day) throws IOException {
+    public BaseResponseEntity share(@ApiIgnore User user, String code, String[] fileId, int day,String nickname) throws IOException {
         if (!ShareFileCheck.checkDayLegal(day)) {
             return BaseResponse.fail("非法分享天数");
         }
@@ -92,11 +96,18 @@ public class ShareFileController {
             }
             String link = shareFileService.add(user.getUsername(), realFileId, code, day);
             if (link != null) {
-                return BaseResponse.success(new HashMap<String, Object>(2) {{
+                return BaseResponse.success(new HashMap<String, Object>(1) {{
                     String webLink = httpType + "://" + serverDomain + ":" + serverPort + "/" + serverApplicationName + "/" + shareFilePath + "/" + link;
-                    log.debug("webLink： {}", webLink);
-                    put("url", webLink);
-                    put("code", code);
+                    Calendar expirationTime = Calendar.getInstance();
+                    expirationTime.setTime(new Date());
+                    expirationTime.add(Calendar.DATE, day);
+                    SimpleDateFormat sdf = new SimpleDateFormat();
+                    sdf.applyPattern("yyyy-MM-dd HH:mm:ss"); //设置显示时间格式
+                    String expTime = sdf.format(expirationTime.getTime());
+                    String content = String.format("%s 给您分享了一些文件，请在 %s 前查看。请点击以下链接 %s 并使用提取码 %s 进行访问。",
+                            nickname, expTime, webLink, code);
+                    log.debug("shareLog：{}",content);
+                    put("content", content);
                 }});
             }
         }
