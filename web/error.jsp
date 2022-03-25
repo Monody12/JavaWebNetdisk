@@ -22,7 +22,7 @@
         }else if ("other".equals(errorType)){
             out.println("<h3>服务器内部发生了异常。<br>您可以尝试退出登录后重新执行操作，如果问题依然出现，请联系网站管理员解决。</h3>");
         }
-        out.println("<br><h4>联系邮箱：pozi62667ueh@163.com</h4>");
+        out.println("<br><h4>联系邮箱：qq614908309@gmail.com</h4>");
     %>
 </body>
 </html>

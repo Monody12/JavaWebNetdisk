@@ -170,6 +170,11 @@ UserTest {
         ops.set("abc","abc");
     }
 
+    @Test
+    public void test16(){
+
+    }
+
     public void AA(Integer i){
         i++;
     }

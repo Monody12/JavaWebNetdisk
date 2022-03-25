@@ -392,7 +392,7 @@
                     for (var i = 0; i < tmp.length; ++i) {
                         tmp[i].size = this.formatSize(tmp[i].size)
                         // tmp[i].path = "/netdisk/upload/" + tmp[i].username + "/" + escape(tmp[i].name)
-                        console.log(tmp[i].path)
+                        // console.log(tmp[i].path)
                     }
                     this.tableData = tmp
                 })
@@ -546,7 +546,7 @@
                     var data = res.data
                     console.log(data)
                     if (data.code===200){
-                        this.$alert(data.resData.content,data.msg , {
+                        this.$alert(data.resData.content,data.msg, {
                             confirmButtonText: '确定',
                         }).then(()=>{
                             this.dialogFormVisible4 = false
@@ -554,7 +554,7 @@
                     }else {
                         this.$message({
                             type: 'error',
-                            message: data.msg
+                            message: '文件分享失败'
                         });
                     }
                 })

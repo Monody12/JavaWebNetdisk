@@ -34,6 +34,7 @@
         </tr>
     </c:forEach>
 </table>
+<p><a href="../../../index.html">返回我的个人网盘</a></p>
 <script type="text/javascript">
     var _1MB = 1024 * 1024;
     var _1KB = 1024;
